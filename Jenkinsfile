@@ -27,10 +27,14 @@ pipeline {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
                                   credentialsId: 'aws-creds']]) {
                     sh """
-                      set -e
+                      set -xe
 
-                      echo 'Logging into ECR from Jenkins (v1 style)...'
-                      eval \$(aws ecr get-login --no-include-email --region ${AWS_REGION})
+                      echo 'Who am I in AWS?'
+                      aws sts get-caller-identity
+
+                      echo 'Logging into ECR from Jenkins (v2 get-login-password)...'
+                      aws ecr get-login-password --region ${AWS_REGION} \
+                        | docker login --username AWS --password-stdin ${ECR_REGISTRY}
 
                       echo 'Building Docker image...'
                       docker build --platform linux/amd64 -t ${ECR_REPO_NAME}:${DOCKER_IMAGE_TAG} .
