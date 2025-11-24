@@ -46,27 +46,26 @@ pipeline {
                 }
             }
         }
-
-
-        stage('Deploy to EC2') {
+                    stage('Deploy to EC2') {
             steps {
-                sshagent (credentials: ['ec2-ssh-key']) {
-                    sh """
-                      ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} '
-                        echo "Logging into ECR on EC2..." &&
-                        aws ecr get-login-password --region ${AWS_REGION} \\
-                          | docker login --username AWS --password-stdin ${ECR_REGISTRY} &&
+                sh """
+                  ssh -i /var/jenkins_home/som-key.pem -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} '
+                    echo "Logging into ECR on EC2..." &&
+                    aws ecr get-login-password --region ${AWS_REGION} \
+                      | docker login --username AWS --password-stdin ${ECR_REGISTRY} &&
 
-                        echo "Pulling new image..." &&
-                        docker pull ${ECR_URI}:${DOCKER_IMAGE_TAG} &&
+                    echo "Pulling new image..." &&
+                    docker pull ${ECR_URI}:${DOCKER_IMAGE_TAG} &&
 
-                        echo "Restarting container..." &&
-                        docker rm -f mywebsite || true &&
-                        docker run -d --name mywebsite -p 80:80 ${ECR_URI}:${DOCKER_IMAGE_TAG}
-                      '
-                    """
-                }
+                    echo "Restarting container..." &&
+                    docker rm -f mywebsite || true &&
+                    docker run -d --name mywebsite -p 80:80 ${ECR_URI}:${DOCKER_IMAGE_TAG}
+                  '
+                """
             }
+        }
+
+
         }
     }
 }
