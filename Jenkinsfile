@@ -70,5 +70,14 @@ pipeline {
                 """
             }
         }
+                         stage('Health Check') {
+            steps {
+                sh """
+                  echo 'Running external health check from Jenkins...'
+                  curl -f http://${EC2_HOST}/ || (echo 'Health check FAILED' && exit 1)
+                  echo 'Health check PASSED'
+                """
+            }
+        }
         }
     }
