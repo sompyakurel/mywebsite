@@ -22,18 +22,18 @@ pipeline {
                 checkout scm
             }
         }
-
-        stage('Build & Push Image') {
+                stage('Build & Push Image') {
             steps {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
                                   credentialsId: 'aws-creds']]) {
                     sh """
+                      set -e
+
+                      echo 'Logging into ECR from Jenkins (v1 style)...'
+                      eval \$(aws ecr get-login --no-include-email --region ${AWS_REGION})
+
                       echo 'Building Docker image...'
                       docker build --platform linux/amd64 -t ${ECR_REPO_NAME}:${DOCKER_IMAGE_TAG} .
-
-                      echo 'Logging into ECR from Jenkins...'
-                      aws ecr get-login-password --region ${AWS_REGION} \\
-                        | docker login --username AWS --password-stdin ${ECR_REGISTRY}
 
                       echo 'Tagging and pushing image...'
                       docker tag ${ECR_REPO_NAME}:${DOCKER_IMAGE_TAG} ${ECR_URI}:${DOCKER_IMAGE_TAG}
@@ -42,6 +42,7 @@ pipeline {
                 }
             }
         }
+
 
         stage('Deploy to EC2') {
             steps {
