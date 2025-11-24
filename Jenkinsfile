@@ -22,7 +22,7 @@ pipeline {
                 checkout scm
             }
         }
-                stage('Build & Push Image') {
+                     stage('Build & Push Image') {
             steps {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
                                   credentialsId: 'aws-creds']]) {
@@ -32,8 +32,13 @@ pipeline {
                       echo 'Who am I in AWS?'
                       aws sts get-caller-identity
 
+                      echo 'Injecting build info into index.html...'
+                      BUILD_INFO="Deployed build ${DOCKER_IMAGE_TAG} at \$(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+                      echo "<!-- \$BUILD_INFO -->" >> index.html
+                      echo "<p style='font-size:12px;color:gray;text-align:center;margin-top:20px;'>\$BUILD_INFO</p>" >> index.html
+
                       echo 'Logging into ECR from Jenkins (v2 get-login-password)...'
-                      aws ecr get-login-password --region ${AWS_REGION} \
+                      aws ecr get-login-password --region ${AWS_REGION} \\
                         | docker login --username AWS --password-stdin ${ECR_REGISTRY}
 
                       echo 'Building Docker image...'
@@ -46,6 +51,7 @@ pipeline {
                 }
             }
         }
+
                     stage('Deploy to EC2') {
             steps {
                 sh """
